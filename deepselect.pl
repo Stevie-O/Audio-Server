@@ -4,7 +4,6 @@ use warnings;
 my $mpg123 = "/usr/bin/mpg123";
 my $root = "/music";
 my $path = "";
-my $mp3_pattern = "\.mp3";
 my @path_layers;
 my $last_played = "";
 
