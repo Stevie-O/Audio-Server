@@ -1,14 +1,26 @@
 use strict;
 use warnings;
 
+# I use mpg123 for audio streaming.
+# The root path we will be following is /music
+# since that is where the drive will be mounted.
 my $mpg123 = "/usr/bin/mpg123";
 my $root = "/music";
+
+# Path will follow this format since the file system is
+# organized this way. This is a guaranteed fact with my personal
+# system.
+# Full potential Path layout:
+#   /Music/Artist/Album/Disc/Song
 my $path = "";
 my @path_layers;
 my $last_played = "";
 
 update_path($root);
 
+# open and read a directory, ignoring . and .., as well as any files
+# starting with .
+# This is default behavior. Other patterns can be passed in.
 sub open_read_dir {
 	my $path = shift;
 	my $pattern = defined $_[0] ? $_[0] : "^(\w|\d).*";
@@ -17,6 +29,9 @@ sub open_read_dir {
 	return @files;
 }
 
+# Determine if there is a majority of directories in the selected Album
+# directory. This would establish if the Disc layer is necessary or if we
+# can skip straight to the song layer.
 sub has_discs {
 	my $path = shift;
 	my @files = open_read_dir($path);
@@ -34,12 +49,15 @@ sub has_discs {
 	return ( $dir > $ndir ? 1 : 0 );
 }
 
+# Adds the new layer to the path layers array and sets the path
+# to the updated path layer array structure.
 sub update_path {
 	my $new_layer = shift;
 	push @path_layers, $new_layer;
 	$path = join("/", @path_layers);
 }
 
+# Main body to repeat forever until the process is killed
 while(1){
 	my @artists = open_read_dir($path);
 	update_path($artists[int(rand(scalar(@artists)))]);
@@ -63,8 +81,13 @@ while(1){
 			$count++;
 		}
 	}
-	$last_played = $path;
+    # Save the last path so we dont play it again and reset
+    # the current path.
+    $last_played = $path;
 	$path = "";
-	undef @path_layers;
+
+    # Clear the path layers to start the process over cleanly
+    # and update the path to the root directory (/music)
+    undef @path_layers;
 	update_path($root);
 }
