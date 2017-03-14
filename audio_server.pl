@@ -15,7 +15,7 @@ my $root = "/music";
 my $path = "";
 my @path_layers;
 my $last_played = "";
-print "Updating path with $root\n";
+
 update_path($root);
 
 # open and read a directory, ignoring . and .., as well as any files
@@ -70,7 +70,7 @@ while(1){
 		update_path($discs[int(rand(scalar(@albums)))]);
 	}
 
-	my @songs = open_read_dir($path, '\.mp3');
+	my @songs = sort open_read_dir($path, '\.(mp3|m4a)');
 	if(@songs && $path ne $last_played){	
 		my $count = 1;
 		foreach(@songs){
