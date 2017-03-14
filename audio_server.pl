@@ -15,7 +15,7 @@ my $root = "/music";
 my $path = "";
 my @path_layers;
 my $last_played = "";
-
+print "Updating path with $root\n";
 update_path($root);
 
 # open and read a directory, ignoring . and .., as well as any files
@@ -23,7 +23,7 @@ update_path($root);
 # This is default behavior. Other patterns can be passed in.
 sub open_read_dir {
 	my $path = shift;
-	my $pattern = defined $_[0] ? $_[0] : "^(\w|\d).*";
+	my $pattern = defined $_[0] ? $_[0] : '^(\w|\d).*';
 	opendir(my $fh, $path) || die "Cannot open $path. $!";
 	my @files = grep { /$pattern/ } readdir($fh);
 	return @files;
@@ -70,7 +70,7 @@ while(1){
 		update_path($discs[int(rand(scalar(@albums)))]);
 	}
 
-	my @songs = open_read_dir($path, "\.mp3");
+	my @songs = open_read_dir($path, '\.mp3');
 	if(@songs && $path ne $last_played){	
 		my $count = 1;
 		foreach(@songs){
