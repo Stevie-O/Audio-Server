@@ -70,7 +70,11 @@ while(1){
 		update_path($discs[int(rand(scalar(@albums)))]);
 	}
 
-	my @songs = sort open_read_dir($path, '\.(mp3|m4a)');
+	my @songs = open_read_dir($path, '\.(mp3|m4a)');
+	if(@songs){
+		@songs = sort @songs;
+		print "Playing $path_layers[1]'s $path_layers[2]\n";
+	}
 	if(@songs && $path ne $last_played){	
 		my $count = 1;
 		foreach(@songs){
