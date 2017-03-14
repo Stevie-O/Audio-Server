@@ -24,7 +24,7 @@ update_path($root);
 sub open_read_dir {
 	my $path = shift;
 	my $pattern = defined $_[0] ? $_[0] : '^(\w|\d).*';
-	opendir(my $fh, $path) || die "Cannot open $path. $!";
+	opendir(my $fh, $path) || return;
 	my @files = grep { /$pattern/ } readdir($fh);
 	return @files;
 }
@@ -70,18 +70,24 @@ while(1){
 		update_path($discs[int(rand(scalar(@albums)))]);
 	}
 
-	my @songs = open_read_dir($path, '\.(mp3|m4a)');
+	my @songs = open_read_dir($path, '\.mp3');
 	if(@songs){
 		@songs = sort @songs;
-		print "Playing $path_layers[1]'s $path_layers[2]\n";
+		print "\nPlaying $path_layers[1]'s $path_layers[2]\n";
 	}
 	if(@songs && $path ne $last_played){	
 		my $count = 1;
 		foreach(@songs){
-			print "Playing $_  (" . 
+			# Make a pretty output to tell which song
+			# is currently playing.
+			my $cur_status = " - Playing $_  (" . 
 			sprintf("%03d", $count) . "/" . 
 			sprintf("%03d", scalar(@songs)) . ")\n";
+			s/\.mp3// for $cur_status;
+			print $cur_status;
+		
 			system($mpg123, "-q", "$path/$_");
+		
 			$count++;
 		}
 	}
