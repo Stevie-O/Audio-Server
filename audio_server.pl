@@ -9,7 +9,7 @@ my $root = "/music";
 
 # Default regex patterns I use in this script
 my $dir_pattern = '^(\w|\d)';
-my $sng_pattern = '\.(mp3|m4a|wav|flac)'
+my $sng_pattern = '\.(mp3|m4a|wav|flac)';
 
 # Path will follow this format since the file system is
 # organized this way. This is a guaranteed fact with my personal
