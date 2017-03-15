@@ -1,10 +1,10 @@
 use strict;
 use warnings;
 
-# I use mpg123 for audio streaming.
+# I use cvlc for audio streaming.
 # The root path we will be following is /music
 # since that is where the drive will be mounted.
-my $mpg123 = "/usr/bin/mpg123";
+my $vlc = "/usr/bin/cvlc";
 my $root = "/music";
 
 # Path will follow this format since the file system is
@@ -70,7 +70,7 @@ while(1){
 		update_path($discs[int(rand(scalar(@albums)))]);
 	}
 
-	my @songs = open_read_dir($path, '\.mp3');
+	my @songs = open_read_dir($path, '\.(mp3|m4a|wav|flac)');
 
 	if(@songs && $path ne $last_played){	
 		# Ensure that the songs are sorted.
@@ -89,7 +89,7 @@ while(1){
 			s/\.mp3// for $cur_status;
 			print $cur_status;
 		
-			system($mpg123, "-q", "$path/$_");
+			system($vlc, "--no-video", "-q", "$path/$_");
 		
 			$count++;
 		}
