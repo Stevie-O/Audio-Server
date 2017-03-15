@@ -7,6 +7,10 @@ use warnings;
 my $vlc = "/usr/bin/cvlc";
 my $root = "/music";
 
+# Default regex patterns I use in this script
+my $dir_pattern = '^(\w|\d)';
+my $sng_pattern = '\.(mp3|m4a|wav|flac)'
+
 # Path will follow this format since the file system is
 # organized this way. This is a guaranteed fact with my personal
 # system.
@@ -23,7 +27,7 @@ update_path($root);
 # This is default behavior. Other patterns can be passed in.
 sub open_read_dir {
 	my $path = shift;
-	my $pattern = defined $_[0] ? $_[0] : '^(\w|\d).*';
+	my $pattern = defined $_[0] ? $_[0] : $dir_pattern;
 	opendir(my $fh, $path) || return;
 	my @files = grep { /$pattern/ } readdir($fh);
 	return @files;
@@ -70,7 +74,7 @@ while(1){
 		update_path($discs[int(rand(scalar(@albums)))]);
 	}
 
-	my @songs = open_read_dir($path, '\.(mp3|m4a|wav|flac)');
+	my @songs = open_read_dir($path, $sng_pattern);
 
 	if(@songs && $path ne $last_played){	
 		# Ensure that the songs are sorted.
@@ -86,10 +90,10 @@ while(1){
 			my $cur_status = " - Playing $_  (" . 
 			sprintf("%03d", $count) . "/" . 
 			sprintf("%03d", scalar(@songs)) . ")\n";
-			s/\.mp3// for $cur_status;
+			s/$sng_pattern// for $cur_status;
 			print $cur_status;
-		
-			system($vlc, "--no-video", "-q", "$path/$_");
+			
+			system($vlc, "--no-video", "--play-and-exit", "-q", "$path/$_");
 		
 			$count++;
 		}
