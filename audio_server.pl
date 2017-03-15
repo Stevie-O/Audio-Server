@@ -71,11 +71,14 @@ while(1){
 	}
 
 	my @songs = open_read_dir($path, '\.mp3');
-	if(@songs){
-		@songs = sort @songs;
-		print "\nPlaying $path_layers[1]'s $path_layers[2]\n";
-	}
+
 	if(@songs && $path ne $last_played){	
+		# Ensure that the songs are sorted.
+		@songs = sort @songs;
+
+		# Print out which Artist and which Album are queued up.
+		print "\nPlaying $path_layers[1]'s $path_layers[2]\n";
+
 		my $count = 1;
 		foreach(@songs){
 			# Make a pretty output to tell which song
