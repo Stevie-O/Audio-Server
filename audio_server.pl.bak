@@ -1,9 +1,5 @@
-#!/usr/bin/perl -s
 use strict;
 use warnings;
-
-our $test;
-our $cycles; $cycles //= 1_000_000;
 
 # I use cvlc for audio streaming.
 # The root path we will be following is /music
@@ -14,8 +10,6 @@ my $root = "/music";
 # Default regex patterns I use in this script
 my $dir_pattern = '^(\w|\d)';
 my $sng_pattern = '\.(mp3|m4a|wav|flac)';
-
-sub play_selection;
 
 # Path will follow this format since the file system is
 # organized this way. This is a guaranteed fact with my personal
@@ -99,7 +93,7 @@ while(1){
 			s/$sng_pattern// for $cur_status;
 			print $cur_status;
 			
-			play_selection("$path/$_");
+			system($vlc, "--no-video", "--play-and-exit", "-q", "$path/$_");
 		
 			$count++;
 		}
@@ -113,15 +107,4 @@ while(1){
     # and update the path to the root directory (/music)
     undef @path_layers;
 	update_path($root);
-}
-
-sub play_selection {
-	my $selection = shift;
-	if ($test) {
-		open(my $tmp, '>>', 'audio_server_selections.log');
-		print $tmp $selection, "\n";
-		exit unless --$cycles;
-	} else {
-			system($vlc, "--no-video", "--play-and-exit", "-q", $selection);
-	}
 }
