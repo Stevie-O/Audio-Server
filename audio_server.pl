@@ -1,9 +1,17 @@
 #!/usr/bin/perl -s
 use strict;
 use warnings;
+use File::ChangeNotify;
+use File::Find;
 
 our $test;
 our $cycles; $cycles //= 1_000_000;
+
+# returns an arrayref containing every directory we'll ever want to play
+sub get_disc_list;
+
+# get_song_list($path) gets the list of song files in $path
+sub get_song_list;
 
 # I use cvlc for audio streaming.
 # The root path we will be following is /music
@@ -12,91 +20,40 @@ my $vlc = "/usr/bin/cvlc";
 my $root = "/music";
 
 # Default regex patterns I use in this script
-my $dir_pattern = '^(\w|\d)';
-my $sng_pattern = '\.(mp3|m4a|wav|flac)';
+my $sng_pattern = qr/\.(mp3|m4a|wav|flac)$/;
 
 sub play_selection;
 
-# Path will follow this format since the file system is
-# organized this way. This is a guaranteed fact with my personal
-# system.
-# Full potential Path layout:
-#   /Music/Artist/Album/Disc/Song
-my $path = "";
-my @path_layers;
-my $last_played = "";
+# read the system to find out what files are there
+my $disc_list = get_disc_list();
 
-update_path($root);
-
-# open and read a directory, ignoring . and .., as well as any files
-# starting with .
-# This is default behavior. Other patterns can be passed in.
-sub open_read_dir {
-	my $path = shift;
-	my $pattern = defined $_[0] ? $_[0] : $dir_pattern;
-	opendir(my $fh, $path) || return;
-	my @files = grep { /$pattern/ } readdir($fh);
-	return @files;
-}
-
-# Determine if there is a majority of directories in the selected Album
-# directory. This would establish if the Disc layer is necessary or if we
-# can skip straight to the song layer.
-sub has_discs {
-	my $path = shift;
-	my @files = open_read_dir($path);
-	my $dir = 0; 
-	my $ndir = 0;
-	
-	foreach(@files){
-		if( -d $_ ){
-			$dir++;
-		} else {
-			$ndir++;
-		}
-	}
-
-	return ( $dir > $ndir ? 1 : 0 );
-}
-
-# Adds the new layer to the path layers array and sets the path
-# to the updated path layer array structure.
-sub update_path {
-	my $new_layer = shift;
-	push @path_layers, $new_layer;
-	$path = join("/", @path_layers);
-}
+# set up a filesystem watcher so we find out if someone adds/removes files
+my $watcher =
+        File::ChangeNotify->instantiate_watcher(
+                directories => [$root],
+        );
 
 # Main body to repeat forever until the process is killed
 while(1){
-	my @artists = open_read_dir($path);
-	update_path($artists[int(rand(scalar(@artists)))]);
-
-	my @albums = open_read_dir($path);
-	update_path($albums[int(rand(scalar(@albums)))]);
-
-	if(has_discs($path)){
-		my @discs = open_read_dir($path);
-		update_path($discs[int(rand(scalar(@albums)))]);
+	if ($watcher->new_events) {
+		print "Filesystem change detected. Re-scanning...\n";
+		$disc_list = get_disc_list();
 	}
+	
+	my $path = $disc_list->[int rand @$disc_list];
 
-	my @songs = open_read_dir($path, $sng_pattern);
-
-	if(@songs && $path ne $last_played){	
-		# Ensure that the songs are sorted.
-		@songs = sort @songs;
-
+	if($path ne $last_played && (@songs = get_song_list($path)) {
 		# Print out which Artist and which Album are queued up.
-		print "\nPlaying $path_layers[1]'s $path_layers[2]\n";
+		print "\nPlaying $path\n";
 
 		my $count = 1;
 		foreach(@songs){
 			# Make a pretty output to tell which song
 			# is currently playing.
-			my $cur_status = " - Playing $_  (" . 
+			my $basename = $_; $basename =~ s/$sng_pattern//;
+			my $cur_status = " - Playing $basename  (" . 
 			sprintf("%03d", $count) . "/" . 
 			sprintf("%03d", scalar(@songs)) . ")\n";
-			s/$sng_pattern// for $cur_status;
 			print $cur_status;
 			
 			play_selection("$path/$_");
@@ -107,12 +64,6 @@ while(1){
     # Save the last path so we dont play it again and reset
     # the current path.
     $last_played = $path;
-	$path = "";
-
-    # Clear the path layers to start the process over cleanly
-    # and update the path to the root directory (/music)
-    undef @path_layers;
-	update_path($root);
 }
 
 sub play_selection {
@@ -124,4 +75,38 @@ sub play_selection {
 	} else {
 			system($vlc, "--no-video", "--play-and-exit", "-q", $selection);
 	}
+}
+
+sub get_song_list {
+	my $path = shift;
+	my @songs;
+	find(sub {
+		if (-d $_) { $File::Find::prune = 1; return; }
+		if (-f $_ && $_ =~ $sng_pattern) { 
+			push @songs, $_;
+		}
+	}, $path);
+	return sort @songs;
+}
+
+sub get_disc_list {
+	my @discs;
+	my %discs;
+	
+	# find all directories with playable files
+	find(sub {
+		if (-f $_ && $_ =~ $sng_pattern) {
+			my $dir = $File::Find::dir;
+			unless ($discs{$dir}) {
+				push @discs, $dir;
+				$discs{$dir} = 1;
+			}
+		}
+	}, $root);
+	
+	@discs = sort @discs;
+	
+	print "Completed filesystem scan. Found ", 0+@discs, " folders.\n";
+	
+	return \@discs;
 }
