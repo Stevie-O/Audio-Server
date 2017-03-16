@@ -33,6 +33,9 @@ my $watcher =
                 directories => [$root],
         );
 
+# the last disc we played, to eliminate repeats
+my $last_played = '';
+
 # Main body to repeat forever until the process is killed
 while(1){
 	if ($watcher->new_events) {
@@ -42,7 +45,9 @@ while(1){
 	
 	my $path = $disc_list->[int rand @$disc_list];
 
-	if($path ne $last_played && (@songs = get_song_list($path)) {
+	my @songs;
+	
+	if($path ne $last_played && (@songs = get_song_list($path))) {
 		# Print out which Artist and which Album are queued up.
 		print "\nPlaying $path\n";
 
