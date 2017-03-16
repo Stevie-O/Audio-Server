@@ -86,7 +86,7 @@ sub get_song_list {
 	my $path = shift;
 	my @songs;
 	find(sub {
-		if (-d $_) { $File::Find::prune = 1; return; }
+		if (-d $_) { $File::Find::prune = 1 unless $_ eq '.'; return; }
 		if (-f $_ && $_ =~ $sng_pattern) { 
 			push @songs, $_;
 		}
